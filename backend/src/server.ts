@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
-import { ProductoUseCases } from './usecases/productoUseCases';
-import { MySQLProductoRepository } from './infra/productoRepo';
+import { ProductoUseCases } from './productoUseCases';
+import { MySQLProductoRepository } from './productoRepo';
 
 const app = express();
 const PORT = 3000;

@@ -1,4 +1,4 @@
-import { Producto, ProductoRepository } from '../domain/producto';
+import { Producto, ProductoRepository } from './producto';
 
 export class ProductoUseCases {
     constructor(private repo: ProductoRepository) {}
