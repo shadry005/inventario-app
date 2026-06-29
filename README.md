@@ -1,4 +1,5 @@
 ﻿# Inventario App
+ Integrantes: Sherline Avila, Marco Perez, Cisse Santos, Luis Nuñez.
 
 ## Descripción del proyecto
 
