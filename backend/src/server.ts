@@ -119,7 +119,7 @@ app.get('/', (req, res) => {
         mensaje: '🚀 API de Inventario funcionando',
         endpoints: {
             listar: 'GET /api/productos',
-            obtener: 'GET /api/productos/:id',
+            obtainer: 'GET /api/productos/:id',
             crear: 'POST /api/productos',
             actualizar: 'PUT /api/productos/:id',
             eliminar: 'DELETE /api/productos/:id'
