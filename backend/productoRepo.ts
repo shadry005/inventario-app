@@ -1,4 +1,4 @@
-import { Producto, ProductoRepository } from './producto';
+import { Producto, ProductoRepository } from './src/domain/producto';
 import { createConnection } from './database';
 
 export class MySQLProductoRepository implements ProductoRepository {
