@@ -68,6 +68,72 @@
             padding: 0 2rem;
         }
 
+        .summary-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 1rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .summary-card {
+            background: rgba(255, 255, 255, 0.45);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            border-radius: 20px;
+            padding: 1.25rem 1.5rem;
+            box-shadow:
+                inset 2px 2px 6px rgba(255, 255, 255, 0.7),
+                inset -3px -3px 6px rgba(109, 76, 65, 0.12),
+                8px 10px 24px rgba(93, 64, 55, 0.12);
+        }
+
+        .summary-card .summary-label {
+            color: #8d6e63;
+            font-size: 0.8rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            margin-bottom: 0.5rem;
+        }
+
+        .summary-card .summary-value {
+            font-family: 'Playfair Display', serif;
+            font-size: 1.8rem;
+            font-weight: 700;
+            color: #6d4c41;
+        }
+
+        .filter-group {
+            display: flex;
+            gap: 0.75rem;
+            flex-wrap: wrap;
+            margin-bottom: 1.5rem;
+        }
+
+        .filter-btn {
+            background: rgba(255, 255, 255, 0.45);
+            color: #5d4037;
+            border: 1px solid rgba(255, 255, 255, 0.35);
+            padding: 0.7rem 1rem;
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            box-shadow:
+                inset 2px 2px 5px rgba(255, 255, 255, 0.7),
+                inset -3px -3px 5px rgba(109, 76, 65, 0.12),
+                6px 8px 18px rgba(93, 64, 55, 0.1);
+        }
+
+        .filter-btn.active {
+            background: linear-gradient(135deg, #8d6e63 0%, #6d4c41 100%);
+            color: #ffffff;
+            border-color: rgba(255, 255, 255, 0.25);
+            box-shadow:
+                inset 2px 2px 6px rgba(255, 255, 255, 0.2),
+                inset -3px -3px 6px rgba(0, 0, 0, 0.2),
+                8px 10px 20px rgba(93, 64, 55, 0.22);
+        }
+
         /* Tarjetas de estadísticas */
         .stats-grid {
             display: grid;
@@ -518,184 +584,78 @@
     </nav>
     
     <div class="container">
-        <!-- Tarjetas de Estadísticas -->
-        <div class="stats-grid">
-            <div class="stat-card">
-                <div class="stat-icon">📋</div>
-                <div class="stat-label">Total Productos</div>
-                <div class="stat-number" id="totalProducts">0</div>
+        <div class="filter-group">
+            <button class="btn filter-btn active" data-branch="all">Todas</button>
+            <button class="btn filter-btn" data-branch="1">Sucursal 1</button>
+            <button class="btn filter-btn" data-branch="2">Sucursal 2</button>
+            <button class="btn filter-btn" data-branch="3">Sucursal 3</button>
+        </div>
+
+        <div class="summary-grid">
+            <div class="summary-card">
+                <div class="summary-label">Existencias totales</div>
+                <div class="summary-value" id="totalStock">0</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">💰</div>
-                <div class="stat-label">Valor Inventario</div>
-                <div class="stat-number" id="totalValue">$0</div>
+            <div class="summary-card">
+                <div class="summary-label">Valor total</div>
+                <div class="summary-value" id="totalValue">$0</div>
             </div>
-            <div class="stat-card">
-                <div class="stat-icon">⚠️</div>
-                <div class="stat-label">Stock Bajo</div>
-                <div class="stat-number" id="lowStock">0</div>
+            <div class="summary-card">
+                <div class="summary-label">Sucursal activa</div>
+                <div class="summary-value" id="activeBranch">Todas</div>
             </div>
         </div>
 
-        <!-- Botones de Acción -->
-        <div class="actions">
-            <button class="btn btn-refresh" onclick="loadProducts()">
-                🔄 Actualizar Datos
-            </button>
-            <button class="btn btn-add" onclick="showModal()">
-                ✦ Nuevo Producto
-            </button>
-        </div>
-
-        <!-- Tabla de Productos -->
         <div class="table-container">
             <div class="table-header">
-                <h2>Productos Registrados</h2>
+                <h2>Inventario completo</h2>
             </div>
             <table>
                 <thead>
                     <tr>
                         <th>ID</th>
-                        <th>Nombre</th>
-                        <th>Descripción</th>
-                        <th>Precio</th>
+                        <th>Producto</th>
+                        <th>Sucursal</th>
                         <th>Stock</th>
-                        <th>Acciones</th>
+                        <th>Precio</th>
+                        <th>Valor</th>
                     </tr>
                 </thead>
-                <tbody id="productsBody">
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <div class="empty-icon">📦</div>
-                                <p>Cargando productos...</p>
-                            </div>
-                        </td>
-                    </tr>
-                </tbody>
+                <tbody id="inventoryBody"></tbody>
             </table>
         </div>
     </div>
 
-    <!-- Modal para Crear/Editar -->
-    <div class="modal" id="productModal">
-        <div class="modal-content">
-            <h2 id="modalTitle">✦ Nuevo Producto</h2>
-            <form id="productForm">
-                <input type="hidden" id="productId">
-                
-                <div class="form-group">
-                    <label>Nombre del Producto *</label>
-                    <input type="text" id="nombre" placeholder="Ej: Café Artesanal Premium" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Descripción</label>
-                    <textarea id="descripcion" rows="3" placeholder="Breve descripción del producto..."></textarea>
-                </div>
-                
-                <div class="form-group">
-                    <label>Precio *</label>
-                    <input type="number" id="precio" step="0.01" placeholder="0.00" required>
-                </div>
-                
-                <div class="form-group">
-                    <label>Stock Disponible *</label>
-                    <input type="number" id="stock" placeholder="Cantidad en inventario" required>
-                </div>
-                
-                <div class="modal-actions">
-                    <button type="button" class="btn btn-cancel" onclick="closeModal()">
-                        Cancelar
-                    </button>
-                    <button type="submit" class="btn btn-save">
-                        Guardar Producto
-                    </button>
-                </div>
-            </form>
-        </div>
-    </div>
-
     <script>
-        const API_URL = 'http://localhost:3000/api';
+        const inventoryData = [
+            { id: 1, nombre: 'Café Premium', sucursal: 1, stock: 24, precio: 12990 },
+            { id: 2, nombre: 'Té Verde', sucursal: 1, stock: 15, precio: 8990 },
+            { id: 3, nombre: 'Pan Integral', sucursal: 2, stock: 32, precio: 6500 },
+            { id: 4, nombre: 'Arroz Orgánico', sucursal: 2, stock: 18, precio: 10990 },
+            { id: 5, nombre: 'Aceite de Oliva', sucursal: 3, stock: 10, precio: 24990 },
+            { id: 6, nombre: 'Mermelada Artesanal', sucursal: 3, stock: 27, precio: 13990 },
+            { id: 7, nombre: 'Harina de Trigo', sucursal: 1, stock: 41, precio: 7890 },
+            { id: 8, nombre: 'Chocolate Negro', sucursal: 2, stock: 9, precio: 11990 }
+        ];
 
-        // Fecha actual formateada
+        let activeBranch = 'all';
+
         function updateDate() {
-            const options = { 
-                weekday: 'long', 
-                year: 'numeric', 
-                month: 'long', 
-                day: 'numeric' 
+            const options = {
+                weekday: 'long',
+                year: 'numeric',
+                month: 'long',
+                day: 'numeric'
             };
             const fecha = new Date().toLocaleDateString('es-ES', options);
-            document.getElementById('currentDate').textContent = 
+            document.getElementById('currentDate').textContent =
                 fecha.charAt(0).toUpperCase() + fecha.slice(1);
         }
         updateDate();
 
-        // Cargar productos desde la API
-        async function loadProducts() {
-            try {
-                const response = await fetch(`${API_URL}/productos`);
-                if (!response.ok) throw new Error('Error de conexión');
-                const productos = await response.json();
-                renderProducts(productos);
-                updateStats(productos);
-            } catch (error) {
-                console.error('Error al cargar:', error);
-                document.getElementById('productsBody').innerHTML = `
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <div class="empty-icon">🔌</div>
-                                <p>Error de conexión con el servidor</p>
-                                <small>Verifique que el backend esté funcionando</small>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-            }
-        }
-
-        function renderProducts(productos) {
-            const tbody = document.getElementById('productsBody');
-            
-            if (productos.length === 0) {
-                tbody.innerHTML = `
-                    <tr>
-                        <td colspan="6">
-                            <div class="empty-state">
-                                <div class="empty-icon">📭</div>
-                                <p>No hay productos registrados</p>
-                                <small>Haga clic en "Nuevo Producto" para comenzar</small>
-                            </div>
-                        </td>
-                    </tr>
-                `;
-                return;
-            }
-
-            tbody.innerHTML = productos.map(p => `
-                <tr>
-                    <td><strong>#${p.id}</strong></td>
-                    <td>${p.nombre}</td>
-                    <td>${p.descripcion || '—'}</td>
-                    <td><strong>$${parseFloat(p.precio).toFixed(2)}</strong></td>
-                    <td>
-                        <span class="stock-badge ${getStockClass(p.stock)}">
-                            ${p.stock} unid.
-                        </span>
-                    </td>
-                    <td>
-                        <button class="btn btn-edit" onclick="editProduct(${p.id})">
-                            ✎ Editar
-                        </button>
-                        <button class="btn btn-delete" onclick="deleteProduct(${p.id})">
-                            ✕ Eliminar
-                        </button>
-                    </td>
-                </tr>
-            `).join('');
+        function getFilteredInventory() {
+            if (activeBranch === 'all') return inventoryData;
+            return inventoryData.filter(item => item.sucursal === Number(activeBranch));
         }
 
         function getStockClass(stock) {
@@ -704,138 +664,67 @@
             return 'stock-low';
         }
 
-        function updateStats(productos) {
-            // Total de productos
-            document.getElementById('totalProducts').textContent = productos.length;
-            
-            // Valor total del inventario
-            const totalValue = productos.reduce((sum, p) => 
-                sum + (parseFloat(p.precio) * parseInt(p.stock)), 0
-            );
-            document.getElementById('totalValue').textContent = 
-                `$${totalValue.toLocaleString('es-ES', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`;
-            
-            // Productos con stock bajo (≤5)
-            const lowStock = productos.filter(p => parseInt(p.stock) <= 5).length;
-            document.getElementById('lowStock').textContent = lowStock;
+        function formatCurrency(value) {
+            return new Intl.NumberFormat('es-ES', {
+                style: 'currency',
+                currency: 'USD',
+                maximumFractionDigits: 0
+            }).format(value);
         }
 
-        // Modal
-        function showModal(id = null) {
-            document.getElementById('productModal').style.display = 'block';
-            document.body.style.overflow = 'hidden';
-            
-            if (id) {
-                document.getElementById('modalTitle').textContent = '✎ Editar Producto';
-                loadProductToEdit(id);
-            } else {
-                document.getElementById('modalTitle').textContent = '✦ Nuevo Producto';
-                document.getElementById('productForm').reset();
-                document.getElementById('productId').value = '';
-            }
-        }
+        function renderInventory() {
+            const filtered = getFilteredInventory();
+            const tbody = document.getElementById('inventoryBody');
 
-        function closeModal() {
-            document.getElementById('productModal').style.display = 'none';
-            document.body.style.overflow = 'auto';
-        }
+            document.getElementById('activeBranch').textContent =
+                activeBranch === 'all' ? 'Todas' : `Sucursal ${activeBranch}`;
 
-        async function loadProductToEdit(id) {
-            try {
-                const response = await fetch(`${API_URL}/productos/${id}`);
-                const producto = await response.json();
-                document.getElementById('productId').value = producto.id;
-                document.getElementById('nombre').value = producto.nombre;
-                document.getElementById('descripcion').value = producto.descripcion || '';
-                document.getElementById('precio').value = producto.precio;
-                document.getElementById('stock').value = producto.stock;
-            } catch (error) {
-                console.error('Error al cargar producto:', error);
-                alert('Error al cargar los datos del producto');
-            }
-        }
+            const totalStock = filtered.reduce((sum, item) => sum + item.stock, 0);
+            const totalValue = filtered.reduce((sum, item) => sum + (item.stock * item.precio), 0);
 
-        // Formulario de crear/editar
-        document.getElementById('productForm').onsubmit = async (e) => {
-            e.preventDefault();
-            
-            const id = document.getElementById('productId').value;
-            const producto = {
-                nombre: document.getElementById('nombre').value.trim(),
-                descripcion: document.getElementById('descripcion').value.trim(),
-                precio: parseFloat(document.getElementById('precio').value),
-                stock: parseInt(document.getElementById('stock').value)
-            };
+            document.getElementById('totalStock').textContent = totalStock;
+            document.getElementById('totalValue').textContent = formatCurrency(totalValue);
 
-            // Validación básica
-            if (!producto.nombre || isNaN(producto.precio) || isNaN(producto.stock)) {
-                alert('Por favor complete todos los campos obligatorios');
+            if (filtered.length === 0) {
+                tbody.innerHTML = `
+                    <tr>
+                        <td colspan="6">
+                            <div class="empty-state">
+                                <div class="empty-icon">📭</div>
+                                <p>No hay productos para esta sucursal</p>
+                            </div>
+                        </td>
+                    </tr>
+                `;
                 return;
             }
 
-            try {
-                const url = id ? `${API_URL}/productos/${id}` : `${API_URL}/productos`;
-                const method = id ? 'PUT' : 'POST';
-                
-                const response = await fetch(url, {
-                    method: method,
-                    headers: { 'Content-Type': 'application/json' },
-                    body: JSON.stringify(producto)
-                });
-
-                if (!response.ok) throw new Error('Error al guardar');
-                
-                closeModal();
-                loadProducts();
-            } catch (error) {
-                console.error('Error:', error);
-                alert('Error al guardar el producto. Intente nuevamente.');
-            }
-        };
-
-        // Eliminar producto
-        async function deleteProduct(id) {
-            if (confirm('¿Está seguro de eliminar este producto?\nEsta acción no se puede deshacer.')) {
-                try {
-                    const response = await fetch(`${API_URL}/productos/${id}`, { 
-                        method: 'DELETE' 
-                    });
-                    
-                    if (!response.ok) throw new Error('Error al eliminar');
-                    
-                    loadProducts();
-                } catch (error) {
-                    console.error('Error:', error);
-                    alert('Error al eliminar el producto');
-                }
-            }
+            tbody.innerHTML = filtered.map(item => `
+                <tr>
+                    <td><strong>#${item.id}</strong></td>
+                    <td>${item.nombre}</td>
+                    <td>Sucursal ${item.sucursal}</td>
+                    <td>
+                        <span class="stock-badge ${getStockClass(item.stock)}">
+                            ${item.stock} unid.
+                        </span>
+                    </td>
+                    <td>${formatCurrency(item.precio)}</td>
+                    <td><strong>${formatCurrency(item.stock * item.precio)}</strong></td>
+                </tr>
+            `).join('');
         }
 
-        // Editar producto
-        function editProduct(id) {
-            showModal(id);
-        }
-
-        // Cerrar modal con ESC
-        document.addEventListener('keydown', function(event) {
-            if (event.key === 'Escape') {
-                closeModal();
-            }
+        document.querySelectorAll('.filter-btn').forEach(button => {
+            button.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(btn => btn.classList.remove('active'));
+                button.classList.add('active');
+                activeBranch = button.dataset.branch;
+                renderInventory();
+            });
         });
 
-        // Cerrar modal al hacer clic fuera
-        window.onclick = function(event) {
-            const modal = document.getElementById('productModal');
-            if (event.target == modal) {
-                closeModal();
-            }
-        }
-
-        // Iniciar carga
-        loadProducts();
-        
-        // Actualizar automáticamente cada 30 segundos
-        setInterval(loadProducts, 30000);
+        renderInventory();
     </script>
 </body>
 </html>
