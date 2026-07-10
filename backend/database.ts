@@ -94,6 +94,45 @@ export async function initializeDatabase() {
         `);
 
         await conn.query(`
+            CREATE TABLE IF NOT EXISTS users (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                username VARCHAR(100) NOT NULL UNIQUE,
+                password_hash VARCHAR(255) NOT NULL,
+                full_name VARCHAR(150) NOT NULL,
+                email VARCHAR(150) NOT NULL UNIQUE,
+                role VARCHAR(50) NOT NULL DEFAULT 'cliente',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        `);
+
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS pedidos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                ticket VARCHAR(50) NOT NULL UNIQUE,
+                metodo_pago VARCHAR(50) NOT NULL,
+                sucursal VARCHAR(100) NOT NULL,
+                tiempo_estimado INT NOT NULL DEFAULT 0,
+                total DECIMAL(10, 2) NOT NULL DEFAULT 0,
+                cliente VARCHAR(150) NOT NULL DEFAULT 'anonimo',
+                estado VARCHAR(50) NOT NULL DEFAULT 'pendiente',
+                created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        `);
+
+        await conn.query(`
+            CREATE TABLE IF NOT EXISTS detalle_pedidos (
+                id INT AUTO_INCREMENT PRIMARY KEY,
+                pedido_id INT NOT NULL,
+                producto_id INT DEFAULT NULL,
+                nombre VARCHAR(150) NOT NULL,
+                cantidad INT NOT NULL DEFAULT 1,
+                precio_unitario DECIMAL(10, 2) NOT NULL DEFAULT 0,
+                subtotal DECIMAL(10, 2) NOT NULL DEFAULT 0,
+                FOREIGN KEY (pedido_id) REFERENCES pedidos(id) ON DELETE CASCADE
+            ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4
+        `);
+
+        await conn.query(`
             CREATE TABLE IF NOT EXISTS inventario_general (
                 id INT AUTO_INCREMENT PRIMARY KEY,
                 id_producto INT NOT NULL,

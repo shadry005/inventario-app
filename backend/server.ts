@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import { createHash } from 'crypto';
 import { ProductoUseCases } from './src/usecases/productoUseCases';
 import { MySQLProductoRepository } from './productoRepo';
 import { createConnection, initializeDatabase, databaseConfig } from './database';
@@ -35,6 +36,72 @@ async function startServer() {
         } catch (error) {
             console.error('Error al listar sucursales:', error);
             res.status(500).json({ error: 'Error al listar sucursales' });
+        }
+    });
+
+    app.post('/api/registro', async (req, res) => {
+        try {
+            const { nombre, usuario, correo, password, rol } = req.body;
+
+            if (!nombre || !usuario || !correo || !password || !rol) {
+                return res.status(400).json({ error: 'Todos los campos son requeridos' });
+            }
+
+            const conn = await createConnection();
+            const [existing] = await conn.execute(
+                'SELECT id FROM users WHERE username = ? OR email = ? LIMIT 1',
+                [usuario, correo]
+            );
+
+            if (Array.isArray(existing) && existing.length > 0) {
+                await conn.end();
+                return res.status(409).json({ error: 'El usuario o correo ya están registrados' });
+            }
+
+            const passwordHash = createHash('sha256').update(String(password)).digest('hex');
+            const [result] = await conn.execute(
+                'INSERT INTO users (username, password_hash, full_name, email, role) VALUES (?, ?, ?, ?, ?)',
+                [usuario, passwordHash, nombre, correo, rol]
+            );
+
+            await conn.end();
+            res.status(201).json({ id: result.insertId, usuario, rol });
+        } catch (error) {
+            console.error('Error al registrar usuario:', error);
+            res.status(500).json({ error: 'No se pudo guardar el usuario' });
+        }
+    });
+
+    app.post('/api/pedidos', async (req, res) => {
+        try {
+            const { ticket, metodo, sucursal, tiempo, items, total, cliente } = req.body;
+
+            if (!ticket || !Array.isArray(items) || items.length === 0) {
+                return res.status(400).json({ error: 'Datos del pedido incompletos' });
+            }
+
+            const conn = await createConnection();
+            const [orderResult] = await conn.execute(
+                'INSERT INTO pedidos (ticket, metodo_pago, sucursal, tiempo_estimado, total, cliente) VALUES (?, ?, ?, ?, ?, ?)',
+                [ticket, metodo || 'caja', sucursal || '', Number(tiempo) || 0, Number(total) || 0, cliente || 'anonimo']
+            );
+
+            const pedidoId = orderResult.insertId;
+
+            for (const item of items) {
+                const cantidad = Number(item.cantidad) || 1;
+                const precio = Number(item.precio) || 0;
+                await conn.execute(
+                    'INSERT INTO detalle_pedidos (pedido_id, producto_id, nombre, cantidad, precio_unitario, subtotal) VALUES (?, ?, ?, ?, ?, ?)',
+                    [pedidoId, item.id || null, item.nombre || '', cantidad, precio, precio * cantidad]
+                );
+            }
+
+            await conn.end();
+            res.status(201).json({ id: pedidoId, ticket });
+        } catch (error) {
+            console.error('Error al guardar pedido:', error);
+            res.status(500).json({ error: 'No se pudo guardar el pedido' });
         }
     });
 

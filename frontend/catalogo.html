@@ -740,6 +740,26 @@
             }
         }
 
+        async function guardarPedidoEnBD(payload) {
+            try {
+                const response = await fetch('http://localhost:3000/api/pedidos', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data.error || 'No se pudo guardar el pedido');
+                }
+
+                return data;
+            } catch (error) {
+                console.error('Error al guardar pedido:', error);
+                return null;
+            }
+        }
+
         function procesarPedido() {
             if (carrito.length === 0) {
                 alert("Por favor, añade al menos un producto a tu carrito.");
@@ -755,16 +775,16 @@
             spinner.style.display = "inline-block";
             btnText.innerText = metodo === 'tarjeta' ? "Autorizando transacción..." : "Procesando orden...";
 
-            setTimeout(() => {
+            setTimeout(async () => {
                 checkoutBtn.disabled = false;
                 spinner.style.display = "none";
                 btnText.innerText = "Pedir antes de llegar";
 
-                generarFacturaYModal(metodo);
+                await generarFacturaYModal(metodo);
             }, 1800); 
         }
 
-        function generarFacturaYModal(metodo) {
+        async function generarFacturaYModal(metodo) {
             const sucursalNombre = document.getElementById('cartSucursalDisplay').value;
             const tiempoLlegada = parseInt(document.getElementById('arrivalTime').value);
             const randomNum = Math.floor(1000 + Math.random() * 9000);
@@ -826,6 +846,26 @@
             
             // Mostrar el icono flotante de la factura fija en segundo plano
             document.getElementById('floatingInvoice').style.display = "flex";
+
+            const payload = {
+                ticket: orderTicket,
+                metodo: metodo,
+                sucursal: sucursalNombre,
+                tiempo: tiempoListo,
+                items: carrito.map(item => ({
+                    id: item.id,
+                    nombre: item.nombre,
+                    cantidad: item.cantidad,
+                    precio: item.precio
+                })),
+                total: Number(document.getElementById('cartTotal').innerText.replace('$', '').replace(',', '')),
+                cliente: 'cliente-web'
+            };
+
+            const guardado = await guardarPedidoEnBD(payload);
+            if (!guardado) {
+                console.warn('El pedido se mostró en pantalla, pero no se pudo guardar en la base de datos.');
+            }
 
             // Vaciar el carrito de compras lateral tras procesar
             carrito = [];

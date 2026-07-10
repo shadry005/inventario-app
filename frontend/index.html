@@ -435,10 +435,42 @@
             redirectByRole(roleSelect?.value);
         });
 
-        document.querySelector('form[action="procesar_registro.php"]')?.addEventListener('submit', (event) => {
+        document.querySelector('form[action="procesar_registro.php"]')?.addEventListener('submit', async (event) => {
             event.preventDefault();
-            const roleSelect = document.getElementById('rolRegistro');
-            redirectByRole(roleSelect?.value);
+            const form = event.currentTarget;
+            const payload = {
+                nombre: document.getElementById('nombre')?.value?.trim(),
+                usuario: document.getElementById('usuarioRegistro')?.value?.trim(),
+                correo: document.getElementById('correo')?.value?.trim(),
+                password: document.getElementById('passwordRegistro')?.value,
+                rol: document.getElementById('rolRegistro')?.value
+            };
+
+            if (!payload.nombre || !payload.usuario || !payload.correo || !payload.password || !payload.rol) {
+                alert('Completa todos los campos para registrarte.');
+                return;
+            }
+
+            try {
+                const response = await fetch('http://localhost:3000/api/registro', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+
+                const data = await response.json().catch(() => ({}));
+                if (!response.ok) {
+                    throw new Error(data.error || 'No se pudo completar el registro.');
+                }
+
+                alert('Registro guardado correctamente.');
+                form.reset();
+                modalOverlay.classList.remove('active');
+                redirectByRole(payload.rol);
+            } catch (error) {
+                console.error('Error al registrar usuario:', error);
+                alert(error.message || 'No se pudo completar el registro.');
+            }
         });
     </script>
 </body>
