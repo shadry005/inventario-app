@@ -32,7 +32,7 @@
             display: flex;
             justify-content: center;
             align-items: center;
-            overflow: hidden; /* Para contener las formas animadas */
+            overflow-x: hidden; /* Permitir scroll vertical si el modal es alto, ocultar horizontal */
             position: relative; /* Base para el posicionamiento absoluto */
         }
 
@@ -221,29 +221,108 @@
             0% { transform: translate(-100%, -100%) rotate(45deg); }
             100% { transform: translate(100%, 100%) rotate(45deg); }
         }
-        /* --------- Registro --------- */
+        
+        /* Enlace sugerido debajo del login */
+        .register-link-container {
+            margin-top: 1.5rem;
+            font-size: 0.95rem;
+            color: #665248;
+        }
+        
+        .register-link-container a {
+            color: var(--primary-brown);
+            font-weight: bold;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        
+        .register-link-container a:hover {
+            text-decoration: underline;
+        }
 
-.separator{
-    margin:25px 0;
-    border:none;
-    border-top:1px solid rgba(118,88,75,.3);
-}
+        /* --------- NUEVOS ESTILOS PARA EL MODAL FLOTANTE --------- */
 
-.register-title{
-    font-size:1.5rem;
-    color:var(--primary-brown);
-    margin-bottom:20px;
-    font-weight:700;
-}
+        /* Fondo oscuro/desenfocado detrás del modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(61, 43, 36, 0.5); /* Color marrón oscuro semi-transparente */
+            backdrop-filter: blur(8px);
+            -webkit-backdrop-filter: blur(8px);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            z-index: 10;
+            opacity: 0;
+            pointer-events: none;
+            transition: opacity 0.3s ease;
+            padding: 20px;
+        }
 
-.register-form{
-    margin-top:20px;
-}
+        /* Clase activa para mostrar el modal */
+        .modal-overlay.active {
+            opacity: 1;
+            pointer-events: auto;
+        }
+
+        /* Contenedor del Registro Flotante (Hereda tu Glassmorphism) */
+        .register-modal {
+            background: rgba(255, 255, 255, 0.65); /* Un poco más opaco para legibilidad en flotante */
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid var(--glass-border);
+            border-radius: 24px;
+            padding: 2.5rem 3rem;
+            width: 100%;
+            max-width: 550px;
+            box-shadow: 0 20px 50px rgba(0, 0, 0, 0.3);
+            text-align: center;
+            position: relative;
+            transform: translateY(-30px);
+            transition: transform 0.3s ease;
+            max-height: 90vh; /* Para que no se corte en pantallas pequeñas */
+            overflow-y: auto;   /* Scroll interno si el formulario es largo */
+        }
+
+        .modal-overlay.active .register-modal {
+            transform: translateY(0);
+        }
+
+        /* Botón de cerrar (X) */
+        .close-modal {
+            position: absolute;
+            top: 20px;
+            right: 25px;
+            font-size: 1.8rem;
+            color: var(--primary-brown);
+            cursor: pointer;
+            background: none;
+            border: none;
+            font-weight: bold;
+            transition: color 0.2s;
+        }
+
+        .close-modal:hover {
+            color: var(--accent-brown);
+        }
+
+        .register-title {
+            font-size: 2rem;
+            color: var(--primary-brown);
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .register-form {
+            margin-top: 20px;
+        }
     </style>
 </head>
 <body>
 
-    <!-- Elemento para el fondo animado -->
     <div class="animated-bg"></div>
 
     <div class="login-container">
@@ -252,9 +331,7 @@
             <p>Accede para gestionar tu catálogo o inventario</p>
         </div>
 
-        <!-- El "action" apuntará a tu script de backend para HeidiSQL -->
         <form action="procesar_login_dinamico.php" method="POST">
-            
             <div class="form-group">
                 <label for="username">Usuario / Correo</label>
                 <input type="text" id="username" name="username" class="clay-input" placeholder="Ej: gestor_principal" required autocomplete="username">
@@ -276,71 +353,75 @@
 
             <button type="submit" class="btn-submit">Ingresar</button>
         </form>
-        <hr class="separator">
 
-<h2 class="register-title">Registro de Usuario</h2>
-
-<form action="procesar_registro.php" method="POST" class="register-form">
-
-    <div class="form-group">
-        <label for="nombre">Nombre Completo</label>
-        <input type="text"
-               id="nombre"
-               name="nombre"
-               class="clay-input"
-               placeholder="Ingresa tu nombre"
-               required>
+        <div class="register-link-container">
+            ¿No tienes una cuenta? <a id="openRegister">Regístrate aquí</a>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="usuarioRegistro">Usuario</label>
-        <input type="text"
-               id="usuarioRegistro"
-               name="usuario"
-               class="clay-input"
-               placeholder="Crea un usuario"
-               required>
+
+    <div class="modal-overlay" id="modalOverlay">
+        <div class="register-modal">
+            <button class="close-modal" id="closeRegister">&times;</button>
+
+            <h2 class="register-title">Registro de Usuario</h2>
+
+            <form action="procesar_registro.php" method="POST" class="register-form">
+                <div class="form-group">
+                    <label for="nombre">Nombre Completo</label>
+                    <input type="text" id="nombre" name="nombre" class="clay-input" placeholder="Ingresa tu nombre" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="usuarioRegistro">Usuario</label>
+                    <input type="text" id="usuarioRegistro" name="usuario" class="clay-input" placeholder="Crea un usuario" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="correo">Correo</label>
+                    <input type="email" id="correo" name="correo" class="clay-input" placeholder="ejemplo@correo.com" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="passwordRegistro">Contraseña</label>
+                    <input type="password" id="passwordRegistro" name="password" class="clay-input" placeholder="Crea una contraseña" required>
+                </div>
+
+                <div class="form-group">
+                    <label for="rolRegistro">Rol</label>
+                    <select id="rolRegistro" name="rol" class="clay-input" required>
+                        <option value="" disabled selected>Seleccione un rol</option>
+                        <option value="cliente">Cliente</option>
+                        <option value="trabajador">Trabajador</option>
+                    </select>
+                </div>
+
+                <button type="submit" class="btn-submit">Registrarse</button>
+            </form>
+        </div>
     </div>
 
-    <div class="form-group">
-        <label for="correo">Correo</label>
-        <input type="email"
-               id="correo"
-               name="correo"
-               class="clay-input"
-               placeholder="ejemplo@correo.com"
-               required>
-    </div>
+    <script>
+        const openBtn = document.getElementById('openRegister');
+        const closeBtn = document.getElementById('closeRegister');
+        const modalOverlay = document.getElementById('modalOverlay');
 
-    <div class="form-group">
-        <label for="passwordRegistro">Contraseña</label>
-        <input type="password"
-               id="passwordRegistro"
-               name="password"
-               class="clay-input"
-               placeholder="Crea una contraseña"
-               required>
-    </div>
+        // Abrir el modal flotante
+        openBtn.addEventListener('click', () => {
+            modalOverlay.classList.add('active');
+        });
 
-    <div class="form-group">
-        <label for="rolRegistro">Rol</label>
-        <select
-            id="rolRegistro"
-            name="rol"
-            class="clay-input"
-            required>
+        // Cerrar desde la "X"
+        closeBtn.addEventListener('click', () => {
+            modalOverlay.classList.remove('active');
+        });
 
-            <option value="" disabled selected>Seleccione un rol</option>
-            <option value="cliente">Cliente</option>
-            <option value="trabajador">Trabajador</option>
-
-        </select>
-    </div>
-
-    <button type="submit" class="btn-submit">
-        Registrarse
-    </button>
-</form>
-    </div>
+        // Cerrar si hacen clic fuera de la tarjeta de registro
+        modalOverlay.addEventListener('click', (e) => {
+            if (e.target === modalOverlay) {
+                modalOverlay.classList.remove('active');
+            }
+        });
+    </script>
 </body>
 </html>
