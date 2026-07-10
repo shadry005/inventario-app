@@ -150,9 +150,14 @@ app.get('/api/inventario', async (req, res) => {
   try {
     const branch = String(req.query.branch || 'all');
     const conn = await createConnection();
-    let sql = `SELECT inv.id_producto, prod.nombre, prod.precio, inv.stock, inv.id_sucursal AS sucursal_id
-      FROM inventario_sucursal inv
-      JOIN productos prod ON inv.id_producto = prod.id`;
+    let sql = `SELECT
+      prod.id AS id_producto,
+      prod.nombre,
+      prod.precio,
+      COALESCE(inv.stock, 0) AS stock,
+      inv.id_sucursal AS sucursal_id
+      FROM productos prod
+      LEFT JOIN inventario_sucursal inv ON prod.id = inv.id_producto`;
     const params = [];
 
     if (branch !== 'all') {
