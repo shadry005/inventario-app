@@ -142,6 +142,18 @@
             margin-bottom: 2.5rem;
         }
 
+        .inventory-error {
+            margin-top: 1rem;
+            padding: 1rem 1.25rem;
+            border-radius: 16px;
+            background: rgba(255, 235, 238, 0.9);
+            color: #b71c1c;
+            border: 1px solid #ef9a9a;
+            display: none;
+            font-weight: 600;
+            text-align: center;
+        }
+
         .stat-card {
             background: #ffffff;
             border-radius: 16px;
@@ -698,19 +710,47 @@
                 </thead>
                 <tbody id="inventoryBody"></tbody>
             </table>
+            <div id="inventoryError" class="inventory-error" aria-live="polite"></div>
         </div>
     </div>
 
     <script>
-        const API_URL = 'http://localhost:3000/api';
+        const API_URLS = ['http://localhost:3001/api', 'http://127.0.0.1:3001/api', 'http://localhost:3000/api', 'http://127.0.0.1:3000/api'];
+        let API_URL = API_URLS[0];
         let inventoryData = [];
         let activeBranch = 'all';
+        const inventoryErrorElement = document.getElementById('inventoryError');
+
+        function mostrarErrorInventario(mensaje) {
+            if (!inventoryErrorElement) return;
+            inventoryErrorElement.textContent = mensaje;
+            inventoryErrorElement.style.display = mensaje ? 'block' : 'none';
+        }
+
+        async function fetchApi(path, options = {}) {
+            let lastError = null;
+            for (const base of API_URLS) {
+                try {
+                    const url = `${base}${path}`;
+                    const res = await fetch(url, options);
+                    if (!res.ok) {
+                        throw new Error(`API ${base}${path} returned ${res.status}`);
+                    }
+                    API_URL = base;
+                    return res;
+                } catch (err) {
+                    lastError = err;
+                    console.warn(`Fetch failed for ${base}${path}:`, err);
+                }
+            }
+            throw new Error(`No se pudo conectar a la API. Intentado: ${API_URLS.join(', ')}. Último error: ${lastError?.message || lastError}`);
+        }
 
         async function cargarInventario() {
             try {
+                mostrarErrorInventario('');
                 const params = activeBranch === 'all' ? '' : `?branch=${activeBranch}`;
-                const res = await fetch(`${API_URL}/inventario${params}`);
-                if (!res.ok) throw new Error('Error al obtener inventario');
+                const res = await fetchApi(`/inventario${params}`);
                 const data = await res.json();
 
                 inventoryData = data.map(p => ({
@@ -721,10 +761,15 @@
                     precio: Number(p.precio || 0)
                 }));
 
+                if (inventoryData.length === 0) {
+                    mostrarErrorInventario('La respuesta del backend no contiene datos de inventario. Revisa que la tabla inventario_sucursal tenga registros.');
+                }
+
                 renderInventory();
             } catch (err) {
                 console.error('No se pudo cargar inventario:', err);
                 inventoryData = [];
+                mostrarErrorInventario(`No se pudo cargar el inventario. ${err?.message || err}. Verifica que el backend esté funcionando en http://localhost:3000.`);
                 renderInventory();
             }
         }
@@ -742,30 +787,48 @@
         }
 
         async function cargarProductos() {
+            const select = document.getElementById('productSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Cargando productos...</option>';
+            }
+
             try {
-                const res = await fetch(`${API_URL}/productos`);
-                if (!res.ok) throw new Error('Error al cargar productos');
+                const res = await fetchApi('/productos');
                 const productos = await res.json();
-                const select = document.getElementById('productSelect');
-                select.innerHTML = productos.map(p =>
-                    `<option value="${p.id}">${p.id} - ${p.nombre}</option>`
-                ).join('');
+                if (select) {
+                    select.innerHTML = productos.map(p =>
+                        `<option value="${p.id}">${p.id} - ${p.nombre}</option>`
+                    ).join('');
+                }
             } catch (err) {
                 console.error('No se pudo cargar productos:', err);
+                if (select) {
+                    select.innerHTML = '<option value="">No se pudieron cargar productos</option>';
+                }
+                mostrarErrorInventario('No se pudieron cargar los productos. Revisa que el backend esté activo.');
             }
         }
 
         async function cargarSucursales() {
+            const select = document.getElementById('branchSelect');
+            if (select) {
+                select.innerHTML = '<option value="">Cargando sucursales...</option>';
+            }
+
             try {
-                const res = await fetch(`${API_URL}/sucursales`);
-                if (!res.ok) throw new Error('Error al cargar sucursales');
+                const res = await fetchApi('/sucursales');
                 const sucursales = await res.json();
-                const select = document.getElementById('branchSelect');
-                select.innerHTML = sucursales.map(s =>
-                    `<option value="${s.id}">${s.id} - ${s.nombre}</option>`
-                ).join('');
+                if (select) {
+                    select.innerHTML = sucursales.map(s =>
+                        `<option value="${s.id}">${s.id} - ${s.nombre}</option>`
+                    ).join('');
+                }
             } catch (err) {
                 console.error('No se pudo cargar sucursales:', err);
+                if (select) {
+                    select.innerHTML = '<option value="">No se pudieron cargar sucursales</option>';
+                }
+                mostrarErrorInventario('No se pudieron cargar las sucursales. Revisa que el backend esté activo.');
             }
         }
 
