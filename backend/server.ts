@@ -1,7 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import { ProductoUseCases } from './src/usecases/productoUseCases';
-import { MySQLProductoRepository } from './productoRepo';
+import { MySQLProductoRepository } from './src/infra/productoRepo';
 import { initializeDatabase, databaseConfig } from './database';
 
 const app = express();
@@ -13,6 +13,20 @@ app.use(express.json());
 const repo = new MySQLProductoRepository();
 const useCases = new ProductoUseCases(repo);
 
+async function waitForDatabase(retries = 15, delay = 3000) {
+    for (let i = 1; i <= retries; i++) {
+        try {
+            await initializeDatabase();
+            console.log("✅ Base de datos conectada.");
+            return;
+        } catch (error) {
+            console.log(`⏳ Esperando MySQL... intento ${i}/${retries}`);
+            await new Promise(resolve => setTimeout(resolve, delay));
+        }
+    }
+
+    throw new Error("No fue posible conectar con MySQL.");
+}
 async function startServer() {
     await initializeDatabase();
 

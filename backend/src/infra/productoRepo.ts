@@ -1,5 +1,5 @@
 import { Producto, ProductoRepository } from '../domain/producto';
-import { createConnection } from './database';
+import { createConnection } from '../../database';
 
 export class MySQLProductoRepository implements ProductoRepository {
     async listar(): Promise<Producto[]> {
