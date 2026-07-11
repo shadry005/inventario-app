@@ -640,6 +640,7 @@
         ];
         const API_URL = 'http://localhost:3000/api';
         const SUCURSALES_POR_ID = { 1: 'centro', 2: 'norte', 3: 'financiero' };
+        const IDS_SUCURSAL = { centro: 1, norte: 2, financiero: 3 };
 
         let tipoFiltrado = 'todos';
         let carrito = [];
@@ -834,6 +835,7 @@
                 ticket: orderTicket,
                 metodo: metodo,
                 sucursal: sucursalNombre,
+                sucursalId: IDS_SUCURSAL[document.getElementById('sucursalSelect').value],
                 tiempo: tiempoListo,
                 items: [...carrito],
                 total: document.getElementById('cartTotal').innerText
@@ -901,7 +903,9 @@
             };
 
             const guardado = await guardarPedidoEnBD(payload);
-            if (!guardado) {
+            if (guardado) {
+                facturaActiva.pedidoId = guardado.id;
+            } else {
                 console.warn('El pedido se mostró en pantalla, pero no se pudo guardar en la base de datos.');
             }
 
@@ -922,7 +926,24 @@
             document.getElementById('successModal').classList.remove('active');
         }
 
-        function finalizarPedidoAbsoluto() {
+        async function finalizarPedidoAbsoluto() {
+            if (!facturaActiva?.pedidoId) {
+                alert('El pedido todavía no se ha guardado. Inténtalo nuevamente en unos segundos.');
+                return;
+            }
+
+            const response = await fetch(`${API_URL}/pedidos/${facturaActiva.pedidoId}/entregar`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ sucursalId: facturaActiva.sucursalId })
+            });
+            const data = await response.json().catch(() => ({}));
+
+            if (!response.ok) {
+                alert(data.error || 'No se pudo actualizar el inventario.');
+                return;
+            }
+
             // Este botón es el único que elimina definitivamente el icono de factura de la pantalla
             alert("¡Gracias por tu visita a Kaffé! Tu orden ha sido marcada como entregada correctamente.");
             document.getElementById('successModal').classList.remove('active');

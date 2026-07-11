@@ -276,6 +276,82 @@ app.post('/api/pedidos', async (req, res) => {
   }
 });
 
+app.post('/api/pedidos/:id/entregar', async (req, res) => {
+  const pedidoId = Number(req.params.id);
+  const sucursalId = Number(req.body.sucursalId);
+
+  if (!Number.isInteger(pedidoId) || !Number.isInteger(sucursalId)) {
+    return res.status(400).json({ error: 'Pedido y sucursal inválidos' });
+  }
+
+  const conn = await createConnection();
+  try {
+    await conn.beginTransaction();
+    const [pedidos] = await conn.execute(
+      'SELECT id, estado FROM pedidos WHERE id = ? FOR UPDATE',
+      [pedidoId]
+    );
+    const pedido = pedidos[0];
+
+    if (!pedido) {
+      await conn.rollback();
+      return res.status(404).json({ error: 'Pedido no encontrado' });
+    }
+    if (pedido.estado === 'entregado') {
+      await conn.rollback();
+      return res.status(409).json({ error: 'El pedido ya fue entregado' });
+    }
+
+    const [detalles] = await conn.execute(
+      'SELECT producto_id, cantidad FROM detalle_pedidos WHERE pedido_id = ?',
+      [pedidoId]
+    );
+
+    for (const detalle of detalles) {
+      const cantidad = Number(detalle.cantidad);
+      if (!detalle.producto_id || cantidad <= 0) {
+        throw new Error('El pedido contiene un producto inválido');
+      }
+
+      const [resultado] = await conn.execute(
+        `UPDATE inventario_sucursal
+         SET stock = stock - ?
+         WHERE id_producto = ? AND id_sucursal = ? AND stock >= ?`,
+        [cantidad, detalle.producto_id, sucursalId, cantidad]
+      );
+
+      if (resultado.affectedRows !== 1) {
+        const error = new Error('Stock insuficiente en la sucursal seleccionada');
+        error.statusCode = 409;
+        throw error;
+      }
+
+      await conn.execute(
+        `UPDATE inventario_general
+         SET stock_total = (
+           SELECT COALESCE(SUM(stock), 0)
+           FROM inventario_sucursal
+           WHERE id_producto = ?
+         )
+         WHERE id_producto = ?`,
+        [detalle.producto_id, detalle.producto_id]
+      );
+    }
+
+    await conn.execute("UPDATE pedidos SET estado = 'entregado' WHERE id = ?", [pedidoId]);
+    await conn.commit();
+    res.json({ id: pedidoId, estado: 'entregado' });
+  } catch (error) {
+    await conn.rollback();
+    console.error('Error al entregar pedido:', error);
+    res.status(error.statusCode || 500).json({
+      error: error.message || 'No se pudo descontar el inventario'
+    });
+  } finally {
+    await conn.end();
+  }
+});
+
 app.get('/api/inventario', async (req, res) => {
   try {
     const branch = String(req.query.branch || 'all');
