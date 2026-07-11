@@ -174,6 +174,30 @@ app.get('/api/productos', async (_req, res) => {
   }
 });
 
+app.get('/api/catalogo', async (_req, res) => {
+  try {
+    const conn = await createConnection();
+    const [rows] = await conn.query(`
+      SELECT
+        prod.id,
+        prod.nombre,
+        prod.descripcion,
+        prod.precio,
+        GROUP_CONCAT(inv.id_sucursal ORDER BY inv.id_sucursal) AS sucursales
+      FROM productos prod
+      INNER JOIN inventario_sucursal inv ON inv.id_producto = prod.id
+      WHERE inv.stock > 0
+      GROUP BY prod.id, prod.nombre, prod.descripcion, prod.precio
+      ORDER BY prod.nombre
+    `);
+    await conn.end();
+    res.json(rows);
+  } catch (error) {
+    console.error('Error al obtener catálogo:', error);
+    res.status(500).json({ error: 'Error al obtener el catálogo' });
+  }
+});
+
 app.get('/api/sucursales', async (_req, res) => {
   try {
     const conn = await createConnection();

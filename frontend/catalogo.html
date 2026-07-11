@@ -626,7 +626,8 @@
     </footer>
 
     <script>
-        const items = [
+        /* Los datos iniciales se sustituyen por los productos que devuelve MySQL. */
+        let items = [
             { id: 1, tipo: 'bebida', nombre: 'Caramel Macchiato Nitro', desc: 'Espresso frío infundido con nitrógeno, vainilla sedosa y rejilla de caramelo.', precio: 5.25, sucursales: ['centro', 'norte', 'financiero'] },
             { id: 2, tipo: 'bebida', nombre: 'Pistachio Velvet Latte', desc: 'Leche vaporizada con extracto de pistacho, espresso y polvo de cacao fino.', precio: 4.85, sucursales: ['financiero'] },
             { id: 3, tipo: 'bebida', nombre: 'Matcha Frappé Supremo', desc: 'Té verde matcha premium licuado con crema de coco y trozos de waffle.', precio: 5.50, sucursales: ['centro', 'norte'] },
@@ -637,10 +638,46 @@
             { id: 13, tipo: 'combo', nombre: 'Combo Kaffé Express', desc: '1 Espresso Intenso Doble + 1 Dona Boston Cream. El boost rápido.', precio: 5.20, sucursales: ['centro', 'norte', 'financiero'] },
             { id: 14, tipo: 'combo', nombre: 'Brunch Ejecutivo Altura', desc: '1 Pistachio Velvet Latte + 1 Croissant de Almendras + Mini ensalada frutal.', precio: 8.90, sucursales: ['financiero'] }
         ];
+        const API_URL = 'http://localhost:3000/api';
+        const SUCURSALES_POR_ID = { 1: 'centro', 2: 'norte', 3: 'financiero' };
 
         let tipoFiltrado = 'todos';
         let carrito = [];
         let facturaActiva = null; // Almacenará los datos del último pedido verificado
+
+        function obtenerTipo(nombre) {
+            const texto = nombre.toLowerCase();
+            if (/croissant|dona|cheesecake|pastel|postre/.test(texto)) return 'postre';
+            if (/combo|brunch/.test(texto)) return 'combo';
+            return 'bebida';
+        }
+
+        async function cargarCatalogo() {
+            const grid = document.getElementById('catalogoGrid');
+            grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color: var(--primary-brown); margin-top:2rem; font-weight:600;">Cargando catálogo...</p>';
+
+            try {
+                const response = await fetch(`${API_URL}/catalogo`);
+                if (!response.ok) throw new Error('No se pudo obtener el catálogo');
+
+                const productos = await response.json();
+                items = productos.map(producto => ({
+                    id: producto.id,
+                    nombre: producto.nombre,
+                    desc: producto.descripcion || 'Producto disponible en Kaffé.',
+                    precio: Number(producto.precio),
+                    tipo: obtenerTipo(producto.nombre),
+                    sucursales: String(producto.sucursales || '')
+                        .split(',')
+                        .map(id => SUCURSALES_POR_ID[Number(id)])
+                        .filter(Boolean)
+                }));
+                filtrarCatalogo();
+            } catch (error) {
+                console.error('Error al cargar catálogo:', error);
+                grid.innerHTML = '<p style="grid-column:1/-1; text-align:center; color: #b33; margin-top:2rem; font-weight:600;">No se pudo cargar el catálogo. Verifica que el backend esté funcionando en http://localhost:3000.</p>';
+            }
+        }
 
         function cambiarFila(tipo, boton) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
@@ -686,13 +723,14 @@
         function actualizarSucursalCarrito() {
             const select = document.getElementById('sucursalSelect');
             document.getElementById('cartSucursalDisplay').value = select.options[select.selectedIndex].text.replace('📍 ', '');
-            carrito = carrito.filter(c => items.find(i => i.id === c.id).sucursales.includes(select.value));
+            carrito = carrito.filter(c => items.find(i => i.id === c.id)?.sucursales.includes(select.value));
             filtrarCatalogo();
             renderCarrito();
         }
 
         function agregarAlCarrito(id) {
             const item = items.find(i => i.id === id);
+            if (!item) return;
             const enCarrito = carrito.find(c => c.id === id);
             if (enCarrito) enCarrito.cantidad++; else carrito.push({ ...item, cantidad: 1 });
             renderCarrito();
@@ -893,8 +931,8 @@
         }
 
         document.addEventListener('DOMContentLoaded', () => {
-            filtrarCatalogo();
             actualizarSucursalCarrito();
+            cargarCatalogo();
         });
     </script>
 </body>

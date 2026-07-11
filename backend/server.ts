@@ -1,4 +1,5 @@
 import express from 'express';
+import { ResultSetHeader } from 'mysql2';
 import cors from 'cors';
 import { createHash } from 'crypto';
 import { ProductoUseCases } from './src/usecases/productoUseCases';
@@ -24,6 +25,31 @@ async function startServer() {
         } catch (error) {
             console.error('Error al listar:', error);
             res.status(500).json({ error: 'Error al listar productos' });
+        }
+    });
+
+    // Productos visibles en el catálogo, junto con las sucursales que tienen stock.
+    app.get('/api/catalogo', async (_req, res) => {
+        try {
+            const conn = await createConnection();
+            const [rows] = await conn.query(`
+                SELECT
+                    prod.id,
+                    prod.nombre,
+                    prod.descripcion,
+                    prod.precio,
+                    GROUP_CONCAT(inv.id_sucursal ORDER BY inv.id_sucursal) AS sucursales
+                FROM productos prod
+                INNER JOIN inventario_sucursal inv ON inv.id_producto = prod.id
+                WHERE inv.stock > 0
+                GROUP BY prod.id, prod.nombre, prod.descripcion, prod.precio
+                ORDER BY prod.nombre
+            `);
+            await conn.end();
+            res.json(rows);
+        } catch (error) {
+            console.error('Error al obtener catálogo:', error);
+            res.status(500).json({ error: 'Error al obtener el catálogo' });
         }
     });
 
@@ -59,13 +85,12 @@ async function startServer() {
             }
 
             const passwordHash = createHash('sha256').update(String(password)).digest('hex');
-            const [result] = await conn.execute(
-                'INSERT INTO users (username, password_hash, full_name, email, role) VALUES (?, ?, ?, ?, ?)',
-                [usuario, passwordHash, nombre, correo, rol]
-            );
+            const [result] = await conn.execute<ResultSetHeader>(
+    'INSERT INTO users (username, password_hash, full_name, email, role) VALUES (?, ?, ?, ?, ?)',
+    [usuario, passwordHash, nombre, correo, rol]
+);
 
-            await conn.end();
-            res.status(201).json({ id: result.insertId, usuario, rol });
+res.status(201).json({ id: result.insertId, usuario, rol });
         } catch (error) {
             console.error('Error al registrar usuario:', error);
             res.status(500).json({ error: 'No se pudo guardar el usuario' });
@@ -81,7 +106,7 @@ async function startServer() {
             }
 
             const conn = await createConnection();
-            const [orderResult] = await conn.execute(
+            const [orderResult] = await conn.execute<ResultSetHeader>(
                 'INSERT INTO pedidos (ticket, metodo_pago, sucursal, tiempo_estimado, total, cliente) VALUES (?, ?, ?, ?, ?, ?)',
                 [ticket, metodo || 'caja', sucursal || '', Number(tiempo) || 0, Number(total) || 0, cliente || 'anonimo']
             );
