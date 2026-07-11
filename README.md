@@ -1,235 +1,167 @@
 ﻿# Inventario App
- Integrantes: Sherline Avila, Marco Perez, Cisse Santos, Luis Nuñez.
 
-## Descripción del proyecto
+## Integrantes
 
-Inventario App es una aplicación de gestión de inventario que permite crear, listar, actualizar y eliminar productos. Cuenta con un backend en Node.js/Express y TypeScript conectado a una base de datos MySQL, y un frontend estático en HTML/CSS/JavaScript.
+- Sherline Ávila
+- Marco Pérez
+- Cisse Santos
+- Luis Núñez
 
-## Objetivo
+## Descripción
 
-El objetivo es proporcionar una solución básica para controlar productos en inventario, mostrar métricas clave y facilitar operaciones CRUD desde una interfaz web ligera.
+Inventario App es un sistema web de gestión de inventario diseñado para administrar productos de tres sucursales de manera organizada y segura. El proyecto contempla la autenticación de usuarios, la diferenciación de roles y la gestión de clientes e inventario mediante una arquitectura web sencilla basada en Node.js, Express, TypeScript, HTML, CSS, JavaScript y MySQL.
 
-## Tecnologías utilizadas
+El sistema permite controlar la información de productos, visualizar el inventario por sucursal y mantener una estructura clara para futuras ampliaciones del proyecto.
+
+## Objetivos
+
+- Controlar el inventario de forma organizada.
+- Administrar clientes de manera eficiente.
+- Controlar el acceso al sistema mediante login.
+- Visualizar el inventario por sucursal.
+- Mostrar totales del inventario de forma automática.
+
+## Tecnologías
 
 - Node.js
 - Express
 - TypeScript
+- HTML
+- CSS
+- JavaScript
 - MySQL
-- mysql2
-- CORS
-- HTML/CSS/JavaScript
-
-## Estructura de carpetas y archivos
-
-```
-inventario-app/
-  README.md
-  frontend/
-    index.html
-  backend/
-    package.json
-    tsconfig.json
-    src/
-      server.ts
-      database.ts
-      domain/
-        producto.ts
-      infra/
-        productoRepo.ts
-      usecases/
-        productoUseCases.ts
-```
+- HeidiSQL
 
-### Detalle de archivos principales
-
-- `README.md`: documentación del proyecto.
-- `backend/package.json`: dependencias y scripts de backend.
-- `backend/tsconfig.json`: configuración de TypeScript para el backend.
-- `backend/src/server.ts`: servidor Express que expone la API REST para inventario.
-- `backend/src/database.ts`: configuración de conexión a MySQL.
-- `backend/src/domain/producto.ts`: modelo de datos `Producto` e interfaz `ProductoRepository`.
-- `backend/src/infra/productoRepo.ts`: implementación concreta de acceso a datos con MySQL.
-- `backend/src/usecases/productoUseCases.ts`: lógica de casos de uso para operaciones de inventario.
-- `frontend/index.html`: interfaz web con UI y llamadas a la API.
+## Arquitectura
 
-## Requisitos para ejecutar el proyecto
+### Frontend
 
-- Node.js instalado (recomendado 18 o superior).
-- MySQL instalado y en ejecución.
-- Base de datos MySQL configurada con el nombre `inventario`.
-- Permisos para crear tablas y consultar datos en MySQL.
+- Login
+- Catálogo de clientes
+- Inventario
+- Dashboard
 
-## Instalación paso a paso
+### Backend
 
-1. Clonar o descargar el proyecto en tu máquina.
-2. Abrir una terminal en la carpeta `inventario-app/backend`.
-3. Ejecutar:
+- Rutas
+- Controladores
+- Modelos
+- Base de datos
 
-```bash
-npm install
-```
+### Base de datos
 
-4. Configurar la conexión a MySQL en `backend/src/database.ts`:
+- Usuarios
+- Clientes
+- Inventario
 
-```ts
-import mysql from 'mysql2/promise';
+## Plan de Desarrollo
 
-export async function createConnection() {
-    return mysql.createConnection({
-        host: 'localhost',
-        user: 'root',
-        password: 'tu_password',
-        database: 'inventario'
-    });
-}
-```
+El proyecto se desarrolló mediante 16 commits organizados en cuatro bloques, con el propósito de construir la aplicación de forma progresiva y ordenada.
 
-5. Crear la base de datos y la tabla de productos en MySQL con el siguiente script:
+### Bloque 1: Base de Datos y Conexión
 
-```sql
-CREATE DATABASE IF NOT EXISTS inventario;
-USE inventario;
+- Commit 1: Crear la base de datos y tabla Usuarios.
+- Commit 2: Crear tablas Clientes e Inventario, incluyendo el campo Sucursal.
+- Commit 3: Configurar la conexión del proyecto con MySQL.
+- Commit 4: Crear el CRUD base para Inventario.
 
-CREATE TABLE IF NOT EXISTS productos (
-  id INT AUTO_INCREMENT PRIMARY KEY,
-  nombre VARCHAR(255) NOT NULL,
-  descripcion TEXT,
-  precio DECIMAL(10,2) NOT NULL,
-  stock INT NOT NULL,
-  created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-);
-```
+### Bloque 2: Login y Seguridad
 
-## Cómo iniciar el backend y el frontend
+- Commit 5: Diseñar la interfaz Login.
+- Commit 6: Validar usuario y contraseña.
+- Commit 7: Implementar sesiones o JWT.
+- Commit 8: Redireccionar según el rol del usuario.
+  - Cliente → Catálogo
+  - Trabajador → Inventario
 
-### Iniciar el backend
+### Bloque 3: Clientes
 
-Desde la carpeta `inventario-app/backend`:
+- Commit 9: Crear la interfaz del catálogo de clientes.
+- Commit 10: Conectar la vista con MySQL.
+- Commit 11: Agregar formulario para registrar y editar clientes.
+- Commit 12: Aplicar validaciones tanto del cliente como del servidor.
 
-```bash
-npm run dev
-```
+### Bloque 4: Inventario
 
-> Si prefieres compilar TypeScript antes de ejecutar:
+- Commit 13: Crear la interfaz del inventario con filtros por sucursal.
+- Commit 14: Filtrar productos por sucursal.
+- Commit 15: Calcular el total del inventario.
+- Commit 16: Aplicar estilos finales, limpiar el código y actualizar el README.
 
-```bash
-npm run build
-npm start
-```
+## Distribución del Trabajo
 
-El backend quedará disponible en:
+### Integrante 1
 
-```
-http://localhost:3000
-```
+Base de datos y conexión.
 
-### Iniciar el frontend
+### Integrante 2
 
-Abrir `inventario-app/frontend/index.html` en un navegador.
+Login y seguridad.
 
-> Nota: El frontend realiza solicitudes a `http://localhost:3000/api`, por lo que el backend debe estar en ejecución.
+### Integrante 3
 
-Si deseas servir el frontend desde un servidor local estático, puedes usar una extensión de Live Server o cualquier servidor HTTP estático.
+Clientes.
 
-## Explicación de cada archivo principal
+### Integrante 4
 
-### `backend/src/server.ts`
+Inventario.
 
-Define el servidor Express y las rutas de la API REST:
+## Flujo del Sistema
 
-- `GET /api/productos`: lista todos los productos.
-- `GET /api/productos/:id`: obtiene un producto por su ID.
-- `POST /api/productos`: crea un nuevo producto.
-- `PUT /api/productos/:id`: actualiza un producto existente.
-- `DELETE /api/productos/:id`: elimina un producto.
+Login
 
-Además, configura middlewares `cors` y `express.json()` para permitir llamadas desde el frontend y manejar JSON.
+↓
 
-### `backend/src/database.ts`
+Validación
 
-Contiene la función `createConnection()` que crea una conexión MySQL utilizando `mysql2/promise`.
+↓
 
-Aquí se define la configuración de host, usuario, contraseña y base de datos. Esta capa abstrae la conexión a la base de datos.
+Determinar Rol
 
-### `backend/src/domain/producto.ts`
+↓
 
-Define el tipo de dato `Producto` y la interfaz `ProductoRepository`.
+Cliente → Catálogo
 
-- `Producto`: estructura de datos con `id`, `nombre`, `descripcion`, `precio` y `stock`.
-- `ProductoRepository`: contrato que describe las operaciones de acceso a datos (listar, obtener, crear, actualizar, eliminar).
+Trabajador → Inventario
 
-### `backend/src/infra/productoRepo.ts`
+↓
 
-Implementa `MySQLProductoRepository` usando MySQL.
+Consulta a MySQL
 
-Esta clase realiza las consultas SQL necesarias para persistir los productos en la tabla `productos`:
+↓
 
-- `listar()`
-- `obtenerPorId()`
-- `crear()`
-- `actualizar()`
-- `eliminar()`
+Mostrar información
 
-### `backend/src/usecases/productoUseCases.ts`
+## Base de Datos
 
-Define la clase `ProductoUseCases`, que encapsula la lógica de negocio.
+### Tabla Usuarios
 
-Esta capa consume el repositorio y expone métodos para cada operación del inventario, lo que permite separar la lógica de negocio de la implementación de datos.
+| Campo | Descripción |
+|---|---|
+| id | Identificador único del usuario |
+| usuario | Nombre de usuario para iniciar sesión |
+| contraseña | Contraseña del usuario |
+| rol | Rol asignado: Cliente o Trabajador |
 
-## Arquitectura utilizada
+### Tabla Clientes
 
-El proyecto sigue una arquitectura de capas ligera:
+| Campo | Descripción |
+|---|---|
+| id | Identificador único del cliente |
+| nombre | Nombre completo del cliente |
+| teléfono | Número de contacto |
+| correo | Correo electrónico del cliente |
 
-- Capa de presentación: `frontend/index.html`.
-- Capa de API/servicio: `backend/src/server.ts`.
-- Capa de dominio: `backend/src/domain/producto.ts` y `backend/src/usecases/productoUseCases.ts`.
-- Capa de infraestructura: `backend/src/database.ts` y `backend/src/infra/productoRepo.ts`.
+### Tabla Inventario
 
-Esta separación facilita el mantenimiento, la prueba y la extensión posterior del proyecto.
+| Campo | Descripción |
+|---|---|
+| id | Identificador único del producto |
+| producto | Nombre del producto |
+| cantidad | Cantidad disponible en inventario |
+| precio | Precio del producto |
+| sucursal | Sucursal donde se encuentra el producto |
 
-## Ejemplos de uso de la API
+## Notas Finales
 
-### Listar productos
-
-```bash
-curl http://localhost:3000/api/productos
-```
-
-### Obtener producto por ID
-
-```bash
-curl http://localhost:3000/api/productos/1
-```
-
-### Crear un producto
-
-```bash
-curl -X POST http://localhost:3000/api/productos \
-  -H 'Content-Type: application/json' \
-  -d '{"nombre":"Café Premium","descripcion":"Café tostado artesanal","precio":12.50,"stock":30}'
-```
-
-### Actualizar un producto
-
-```bash
-curl -X PUT http://localhost:3000/api/productos/1 \
-  -H 'Content-Type: application/json' \
-  -d '{"nombre":"Café Premium","descripcion":"Café orgánico","precio":13.99,"stock":25}'
-```
-
-### Eliminar un producto
-
-```bash
-curl -X DELETE http://localhost:3000/api/productos/1
-```
-
-## Conclusiones
-
-Inventario App es una solución básica de gestión de productos, útil como punto de partida para un sistema más robusto. Combina un backend en Node.js/Express con MySQL y un frontend estático con llamadas a la API.
-
-Para mejorar el proyecto, se puede:
-
-- agregar validación avanzada y manejo de errores en el backend,
-- crear un script de migraciones para la base de datos,
-- separar el frontend en archivos CSS/JS independientes,
-- y organizar la estructura de carpetas para reflejar claramente las capas de dominio, casos de uso e infraestructura.
+Este proyecto representa una propuesta funcional de sistema de inventario orientada al aprendizaje y al desarrollo de habilidades en diseño de aplicaciones web, manejo de bases de datos y organización de trabajo en equipo. La documentación presentada busca reflejar de forma clara la estructura del sistema, sus objetivos, la arquitectura propuesta y la planificación de desarrollo establecida para el proyecto.
